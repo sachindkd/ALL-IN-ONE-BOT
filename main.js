@@ -103,7 +103,8 @@ const fetchAndRegisterCommands = async () => {
     }
 };
 
-require('./handlers/security')(client);     
+require('./handlers/security')(client);
+require('./handlers/botSecurity').setup(client);
 require('./handlers/applications')(client); 
 require('./handlers/server');  
 require('./handlers/economyScheduler')(client);
