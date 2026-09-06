@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const { REST, Routes } = require('discord.js');
 
+// Servers that should receive the latest slash commands immediately.
+const PRIORITY_GUILD_IDS = ['1426271681969655913'];
+
 module.exports = async (client, config, colors) => {
     const commandsPath = path.join(__dirname, '../commands');
     const commandFolders = fs.readdirSync(commandsPath);
@@ -19,7 +22,7 @@ module.exports = async (client, config, colors) => {
         }
     }
 
-    // ✅ Register commands to Discord
+    // Register commands with Discord.
     const rest = new REST({ version: '10' }).setToken(process.env.TOKEN || config.token);
 
     try {
@@ -35,10 +38,24 @@ module.exports = async (client, config, colors) => {
             console.log(`${colors.red}[ LOADER ]${colors.reset} ${colors.green}Loading Slash Commands 🛠️${colors.reset}`);
         }
 
+        // Keep global registration for normal propagation.
         await rest.put(
             Routes.applicationCommands(client.user.id),
             { body: commands }
         );
+
+        // Also register directly to priority guilds so new commands appear immediately.
+        for (const guildId of PRIORITY_GUILD_IDS) {
+            try {
+                await rest.put(
+                    Routes.applicationGuildCommands(client.user.id, guildId),
+                    { body: commands }
+                );
+                console.log(`${colors.cyan}[ GUILD ]${colors.reset} ${colors.green}Commands registered to ${guildId} ✓${colors.reset}`);
+            } catch (guildError) {
+                console.log(`${colors.red}[ GUILD ERROR ]${colors.reset} ${colors.red}Failed to register commands to ${guildId}: ${guildError.message}${colors.reset}`);
+            }
+        }
 
         console.log(`${colors.red}[ LOADER ]${colors.reset} ${colors.green}Successfully Loaded Slash Commands ✅${colors.reset}`);
     } catch (error) {
